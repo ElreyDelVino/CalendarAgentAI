@@ -62,9 +62,7 @@ def pedir_login():
             flow = crear_flow()
             flow.fetch_token(code=codigo)
             st.session_state.creds = flow.credentials
-            # La zona horaria viene incluida en events().list, así evitamos pedir un permiso aparte
-            info = servicio().events().list(calendarId='primary', maxResults=1).execute()
-            st.session_state.zona = info.get('timeZone', 'UTC')
+            st.session_state.zona = servicio().calendars().get(calendarId='primary').execute().get('timeZone', 'UTC')
         except Exception as e:
             st.session_state.pop("creds", None)
             st.error(f"No se pudo iniciar sesión: {e}")
@@ -164,8 +162,55 @@ def crear_chat():
         temperature=0.3))
 
 
+def mostrar_privacidad():
+    """Página pública de política de privacidad, en el mismo dominio que el resto de la app."""
+    st.title("📅 Política de privacidad — Agente Calendario")
+    st.caption("Última actualización: 29 de septiembre de 2026")
+    st.markdown("""
+Agente Calendario es una aplicación personal que permite gestionar tu Google Calendar mediante
+lenguaje natural (crear, consultar, modificar y eliminar eventos) a través de un asistente de IA.
+
+### Qué datos se usan
+- Los eventos de tu Google Calendar (título, fecha, hora y, si aplica, reglas de recurrencia) que tú
+  mismo pidas consultar, crear, modificar o eliminar durante la conversación.
+- El texto que escribes al asistente, para poder interpretarlo y responder.
+
+### Cómo se usan
+Los datos de tu calendario se usan **únicamente** para responder a tus propias peticiones dentro de
+la misma conversación. No se usan con ningún otro fin.
+
+- El texto de tu mensaje y, cuando es necesario para responder, la información de tus eventos, se
+  envían a la API de Gemini (Google) para generar la respuesta del asistente.
+- Las acciones sobre tu calendario se realizan directamente contra la API de Google Calendar, con tu
+  autorización explícita mediante el inicio de sesión de Google (OAuth).
+
+### Qué NO se hace con tus datos
+- No se almacenan tus credenciales de Google en el servidor: el acceso se mantiene solo durante tu
+  sesión en el navegador.
+- No se guarda un historial permanente de tus eventos ni de tus conversaciones en ninguna base de datos.
+- No se comparten, venden ni ceden tus datos a terceros. No se usan para publicidad.
+
+### Permisos solicitados
+La aplicación solicita el permiso `https://www.googleapis.com/auth/calendar.events`, que permite
+únicamente ver, crear, modificar y eliminar eventos de tu calendario. No se solicita acceso a la
+configuración general del calendario ni a otros datos de tu cuenta de Google.
+
+### Cómo revocar el acceso
+Puedes retirar el acceso de esta aplicación a tu cuenta de Google en cualquier momento desde
+[myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+
+### Contacto
+Para cualquier duda sobre esta política, escribe a la dirección de correo de soporte indicada en
+la propia aplicación.
+    """)
+    st.stop()
+
+
 # ---------- Interfaz ----------
 st.set_page_config(page_title="Asistente de calendario", page_icon="📅")
+
+if st.query_params.get("page") == "privacidad":
+    mostrar_privacidad()
 
 if "creds" not in st.session_state:
     pedir_login()
