@@ -62,7 +62,9 @@ def pedir_login():
             flow = crear_flow()
             flow.fetch_token(code=codigo)
             st.session_state.creds = flow.credentials
-            st.session_state.zona = servicio().calendars().get(calendarId='primary').execute().get('timeZone', 'UTC')
+            # La zona horaria viene incluida en events().list, así evitamos pedir un permiso aparte
+            info = servicio().events().list(calendarId='primary', maxResults=1).execute()
+            st.session_state.zona = info.get('timeZone', 'UTC')
         except Exception as e:
             st.session_state.pop("creds", None)
             st.error(f"No se pudo iniciar sesión: {e}")
